@@ -14,6 +14,7 @@ def test(test_dl, len_test, sftmd, predictor, corrector, args):
     loss_fn = F.mse_loss
     num_iter = args['num_iter']
     device = args['device']
+    scale = args['scale']
     
     sftmd.to(device)
     predictor.to(device)
@@ -57,13 +58,20 @@ def test(test_dl, len_test, sftmd, predictor, corrector, args):
                 time.ctime(), count, len_test, mse, ssim, psnr
             )
             print(msg)
+            
             result_lr = tensor2imgtensor(LR[0].cpu())
             result_sr = tensor2imgtensor(SR[0].cpu())
             result_hr = tensor2imgtensor(HR[0].cpu())
+            
             img = imgtensor2img(result_sr)
             img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(f"./IKC/results/{args['test'][12:]}_{count}_x{args['scale']}.jpg", img)
-            plot([result_lr, result_sr, result_hr], ["LR", "SR", "HR"], (1, 3))
+            cv2.imwrite(f"{args['result_dir']}/{args['test'][12:]}_{count}_x{args['scale']}.jpg", img)
+            
+            idx_from, idx_to = test_data['patch_from'][0], test_data['patch_to'][0]
+            patch_lr = result_lr[idx_from[0]:idx_to[0], idx_from[1]:idx_to[1], :]
+            patch_sr = result_sr[idx_from[0]*scale:idx_to[0]*scale, idx_from[1]*scale:idx_to[1]*scale, :]
+            patch_hr = result_hr[idx_from[0]*scale:idx_to[0]*scale, idx_from[1]*scale:idx_to[1]*scale, :]
+            plot([patch_lr, patch_sr, patch_hr], ["LR", "SR", "HR"], (1, 3))
         end_time = time.time()
     
     print(
